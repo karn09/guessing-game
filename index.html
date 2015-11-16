@@ -16,10 +16,10 @@
             </div>
             <div class="row">
                 <div class="col-md-4 col-md-offset-4">
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="What's your guess?">
+                    <div class="input-group guessForm">
+                        <input type="text" id="guess" class="form-control" placeholder="What's your guess?">
                         <span class="input-group-btn">
-                        <button class="btn btn-default" type="button">?</button>
+                        	<button class="btn btn-default" id="getGuess" type="button">?</button>
                         </span>
                     </div>
                 </div>
@@ -35,13 +35,20 @@
                             <p class="text-center cold">Cold</p>
                         </div>
                     </div>
+                    <div class="tryAgain">
+                    	<div class="well">
+                    		<p id="tryMsg" class="text-center">
+                    			
+                    		</p>
+                    	</div>
+                    </div>
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-4 col-md-offset-4">
                     <p class="text-center">
-                    <button type="button" class="btn btn-primary btn-lg">Reset</button>
-                    <button type="button" class="btn btn-primary btn-lg">Answer</button>
+                    <button type="button" id="reset" class="btn btn-primary btn-lg">Reset</button>
+                    <button type="button" id="answer" class="btn btn-primary btn-lg">Answer</button>
                     </p>
                 </div>
             </div>
