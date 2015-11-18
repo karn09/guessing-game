@@ -4,74 +4,122 @@ jQuery(function($) {
             return Math.floor(Math.random() * 100 + 1);
         },
         prevGuesses: function() {
-            return new Array;
+            return {hot: [], cold: []}
         }
     }
-    var View = {
+    var Main = {
         init: function() {
+            if (this.prevGuess) {
+                this.prevGuess = Model.prevGuesses();
+            }
             this.answer = Model.newRandom();
+            this.radius = 15;
             this.prevGuess = Model.prevGuesses();
+            this.currentMsg = 'Enter a number above!';
             this.cacheElements();
             this.bindEvents();
+            this.render();
+            console.log(this.prevGuess)
         },
         cacheElements: function() {
             this.$hot = $('.hot');
             this.$cold = $('.cold');
-            this.$answer = $('.answer');
+            this.$answerBox = $('.answer');
             this.$guessForm = $("#guessForm");
             this.$guessBtn = $('#getGuess');
-            this.$resetBtn = $('.reset');
-            this.$answerBtn = $('.answer');
+            this.$resetBtn = $('#reset');
+            this.$answerBtn = $('#answer');
+            this.$coldWell = $('.cold-well');
+            this.$hotWell = $('.hot-well');
             this.$tryAgain = $('.tryAgain');
             this.$tryMsg = $('#tryMsg');
         },
         bindEvents: function() {
+            var self = this;
             this.$guessBtn.click(function() {
                 var guessInput = $('#guess');
-                Control.checkInput(guessInput.val())
+                self.checkInput(guessInput.val())
             });
             this.$resetBtn.click(function() {
-                Control.resetGame();
+                self.resetGame();
             });
             this.$answerBtn.click(function() {
-                Control.getAnswer();
+                self.getAnswer();
             })
+        },
+        render: function() {
+            this.$tryMsg.text(this.currentMsg);
+            if (this.prevGuess.hot.length > 0) {
+                this.$hotWell.css('background-color', 'red');
+                this.$hotWell.fadeIn(100).fadeOut(100).fadeIn(100);
+                this.$hotWell.css('background-color', '#f5f5f5');
+            } else {
+                this.$hot.text("Hot");
+            }
+            if (this.prevGuess.cold.length > 0) {
+//                this.$coldWell.css('background-color', 'blue')
+                this.$coldWell.css('background-color', 'blue').fadeIn(100).fadeOut(100).fadeIn(100).css('background-color', '#f5f5f5');
+  //              this.$coldWell.css('background-color', '#f5f5f5')
+            } else {
+                this.$cold.text("Cold");
+            }
         },
         // render Try again popup over Hot/Cold button for 2s, leaving hot/cold
         // lit up
-        tryAgain: function(err) {
-            var self = this;
-            if (err) {
-                self.$answer.hide(1, function() {
-                    self.$tryAgain.show(1, function() {
-                        if (err === "bound") {
-                            self.$tryMsg.text("Between 1 and 100 only!");
-                        }
-                        if (err === "dec") {
-                            self.$tryMsg.text("Decimal numbers only!");
-                        }
-                    }).hide(2500);
-                }).show(2500);
-            }
-        }
-    }
-    var Control = {
+        chgMsg: function(msg) {
+            this.currentMsg = msg;
+
+            this.render();
+        },
+
         checkInput: function(val) {
+            var self = this;
             val = Number(val);
             if (typeof val == "number" && Math.floor(val) === val) {
                 if (val < 1 || val > 100) {
-                    View.tryAgain("bound");
-                    console.log("Between 1 and 100 only!");
+                    self.chgMsg("Between 1 and 100 only!");
                 } else {
-                    console.log("What did you guess? " + val);
+                    self.chgMsg("Hmm.." + val + "..?");
+                    this.checkGuess(val);
                 }
             } else {
-                View.tryAgain("dec")
-                console.log('Decimal numbers only!');
+                self.chgMsg('Decimal numbers only!');
             }
         },
-        resetGame: function() {},
-        getAnswer: function() {}
+        checkGuess: function(val) {
+            var self = this;
+            console.log(typeof this.answer)
+            console.log(this.answer)
+            if (val === this.answer) { 
+                this.chgMsg("You found it! " + val) 
+            } else if (val > (this.answer + this.radius) || val < (this.answer - this.radius)) {
+                console.log(val + " " + this.answer)
+                this.prevGuess.cold.push(val)
+                this.$cold.text(this.prevGuess.cold);   
+
+                this.chgMsg("Brrr....not so close. ")
+
+            } else {
+                this.prevGuess.hot.push(val)
+                this.$hot.text(this.prevGuess.hot);  
+
+                this.radius--;
+
+                this.chgMsg("Getting hotter..")
+            }
+            
+
+        },
+
+        // trigger appears to double each reset. 
+        resetGame: function() {
+            this.init();
+        },
+
+        getAnswer: function() {
+            this.chgMsg("Final answer is " + this.answer);
+        }
     }
-    View.init();
+    Main.init();
+
 });
