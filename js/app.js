@@ -9,9 +9,6 @@ jQuery(function($) {
     }
     var Main = {
         init: function() {
-            if (this.prevGuess) {
-                this.prevGuess = Model.prevGuesses();
-            }
             this.answer = Model.newRandom();
             this.radius = 15;
             this.prevGuess = Model.prevGuesses();
@@ -19,7 +16,6 @@ jQuery(function($) {
             this.cacheElements();
             this.bindEvents();
             this.render();
-            console.log(this.prevGuess)
         },
         cacheElements: function() {
             this.$hot = $('.hot');
@@ -35,19 +31,22 @@ jQuery(function($) {
             this.$tryMsg = $('#tryMsg');
         },
         bindEvents: function() {
+            // encountered an issue where bindings were firing on 1,2,4,8,16..
+            //http://stackoverflow.com/questions/14969960/jquery-click-events-firing-multiple-times
             var self = this;
-            this.$guessBtn.click(function() {
+            this.$guessBtn.one().click(function() {
                 var guessInput = $('#guess');
                 self.checkInput(guessInput.val())
             });
-            this.$resetBtn.click(function() {
+            this.$resetBtn.one().click(function() {
                 self.resetGame();
             });
-            this.$answerBtn.click(function() {
+            this.$answerBtn.one().click(function() {
                 self.getAnswer();
             })
         },
         render: function() {
+            console.log(this.prevGuess)
             this.$tryMsg.text(this.currentMsg);
             if (this.prevGuess.hot.length > 0) {
                 this.$hotWell.css('background-color', 'red');
@@ -56,7 +55,7 @@ jQuery(function($) {
             } else {
                 this.$hot.text("Hot");
             }
-            if (this.prevGuess.cold.length > 0) {
+            if (this.prevGuess.cold.length > 0) { 
 //                this.$coldWell.css('background-color', 'blue')
                 this.$coldWell.css('background-color', 'blue').fadeIn(100).fadeOut(100).fadeIn(100).css('background-color', '#f5f5f5');
   //              this.$coldWell.css('background-color', '#f5f5f5')
@@ -88,18 +87,16 @@ jQuery(function($) {
         },
         checkGuess: function(val) {
             var self = this;
-            console.log(typeof this.answer)
-            console.log(this.answer)
             if (val === this.answer) { 
                 this.chgMsg("You found it! " + val) 
             } else if (val > (this.answer + this.radius) || val < (this.answer - this.radius)) {
-                console.log(val + " " + this.answer)
+                console.log(val + " .. " + this.answer)
                 this.prevGuess.cold.push(val)
                 this.$cold.text(this.prevGuess.cold);   
 
                 this.chgMsg("Brrr....not so close. ")
 
-            } else {
+            } else if (val < (this.answer + this.radius) && val > (this.answer - this.radius)) {
                 this.prevGuess.hot.push(val)
                 this.$hot.text(this.prevGuess.hot);  
 
