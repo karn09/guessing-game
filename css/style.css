@@ -1,0 +1,13 @@
+* {
+	font-family: "ubuntu", "Times New Roman";
+}
+
+/* hot number, increase brightness of color?
+*/
+.hot-well {
+	background-color: #F5DADA;
+}
+
+.cold-well {
+	background-color: #DADEF5;
+};
