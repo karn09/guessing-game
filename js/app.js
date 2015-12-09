@@ -29,7 +29,10 @@ jQuery(function($) {
             return Math.floor(Math.random() * 100 + 1);
         },
         prevGuesses: function() {
-            return {hot: [], cold: []}
+            return {
+                hot: [],
+                cold: []
+            }
         }
     }
     var Main = {
@@ -43,6 +46,7 @@ jQuery(function($) {
             this.render();
             this.guesses = 0;
             this.maxGuess = 5;
+            this.currDigitsAway = 0;
         },
         cacheElements: function() {
             this.$hot = $('.hot');
@@ -59,7 +63,7 @@ jQuery(function($) {
             this.$tryMsg = $('#tryMsg');
         },
         // on reset, clear out all bindings so that multiple clicks aren't accidentally registered.
-        clearEvents: function () {
+        clearEvents: function() {
             this.$guessBtn.unbind();
             this.$guessInput.unbind();
             this.$resetBtn.unbind();
@@ -83,7 +87,7 @@ jQuery(function($) {
                 self.resetGame();
             });
             this.$answerBtn.click(function() {
-                self.getAnswer();
+                self.getHint();
             })
         },
         render: function() {
@@ -93,17 +97,17 @@ jQuery(function($) {
 
             if (this.prevGuess.hot.length > 0) {
                 this.$hotWell.css('background-color', 'red').fadeIn(100).fadeOut(100).fadeIn(100).css('background-color', '#f5f5f5');
-                this.$hot.text(this.prevGuess.hot);  
+                this.$hot.text(this.prevGuess.hot);
 
             } else {
                 this.$hot.text("Hot");
             }
-            
-            if (this.prevGuess.cold.length > 0) { 
-                this.$coldWell.css('background-color', 'blue').fadeIn(100).fadeOut(100).fadeIn(100).css('background-color', '#f5f5f5');
-                this.$cold.text(this.prevGuess.cold);   
 
-  //              this.$coldWell.css('background-color', '#f5f5f5')
+            if (this.prevGuess.cold.length > 0) {
+                this.$coldWell.css('background-color', 'blue').fadeIn(100).fadeOut(100).fadeIn(100).css('background-color', '#f5f5f5');
+                this.$cold.text(this.prevGuess.cold);
+
+                //              this.$coldWell.css('background-color', '#f5f5f5')
             } else {
                 this.$cold.text("Cold");
             }
@@ -121,7 +125,7 @@ jQuery(function($) {
             val = Number(val);
             if (this.guesses === this.maxGuess) {
                 this.chgMsg("Maybe it's time you gave up and started a new game.")
-            } else {                
+            } else {
                 if (typeof val == "number" && Math.floor(val) === val) {
                     if (val < 1 || val > 100) {
                         self.chgMsg("Between 1 and 100 only!");
@@ -140,8 +144,8 @@ jQuery(function($) {
         // check input value for nearness to generated value and push to hot/cold obj arrays.
         checkGuess: function(val) {
             var self = this;
-            if (val === this.answer) { 
-                this.chgMsg("You found it! " + val) 
+            if (val === this.answer) {
+                this.chgMsg("You found it! " + val)
             } else if (this.prevGuess.hot.indexOf(val) !== -1 || this.prevGuess.cold.indexOf(val) !== -1) {
                 this.chgMsg("Why not guess a new number..")
             } else {
@@ -160,12 +164,13 @@ jQuery(function($) {
         // check if # is lower or higher.
         lowerOrHigher: function(val) {
             var resp = 'Your guess is ';
+            this.currDigitsAway = Math.ceil(Math.abs(this.answer - val) / 5) * 5;
             if (val < this.answer) {
                 resp += 'lower than the answer and ';
             } else if (val > this.answer) {
                 resp += 'greater than the answer and ';
             }
-            resp += 'within ' + Math.ceil(Math.abs(this.answer - val)/5)*5 + ' digits';
+            resp += 'within ' + this.currDigitsAway + ' digits';
             return resp;
         },
 
@@ -174,9 +179,31 @@ jQuery(function($) {
             this.clearEvents();
             this.init();
         },
+
         // set msg to final answer. 
-        getAnswer: function() {
-            this.chgMsg("Final answer is " + this.answer);
+        getHint: function() {
+            var hintArray = [];
+            var hintText = '';
+            var max = (this.answer + this.currDigitsAway) < 100 ? (this.answer + this.currDigitsAway) : 100;
+            var min = (this.answer - this.currDigitsAway) < 0 ? 0 : this.answer - this.currDigitsAway;
+            if (this.guesses === 1) {
+                for (var i = 0; i < 8; i++) {
+                    hintArray.push(Math.floor(Math.random() * (max - min + 1) + min))
+                }
+            } else if (this.guesses === 2) {
+                for (var i = 0; i < 6; i++) {
+                    hintArray.push(Math.floor(Math.random() * (max - min + 1) + min))
+                }
+            } else if (this.guesses === 3) {
+                for (var i = 0; i < 4; i++) {
+                    hintArray.push(Math.floor(Math.random() * (max - min + 1) + min))
+                }
+            } else if (this.guesses === 4) {
+                for (var i = 0; i < 2; i++) {
+                    hintArray.push(Math.floor(Math.random() * (max - min + 1) + min))
+                }
+            };
+            this.chgMsg("Hints are: " + hintArray.join(', '));
         }
     }
     Main.init();
