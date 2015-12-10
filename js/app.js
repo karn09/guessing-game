@@ -17,9 +17,9 @@
 
 
 // TODO:
-// create and display array of hints depending on guesses left. 
-// if winning number found, stop accepting additional input
-// if no more guesses availible, stop accepting additional input
+// DONE - create and display array of hints depending on guesses left. 
+// DONE - if winning number found, stop accepting additional input
+// DONE if no more guesses availible, stop accepting additional input
 // display numbers previously guessed - maybe for numbers > x digits away- show in cold panel. as gets closer- show in hot panel
 // cool winning panel popup? 
 
@@ -62,25 +62,31 @@ jQuery(function($) {
             this.$tryAgain = $('.tryAgain');
             this.$tryMsg = $('#tryMsg');
         },
-        // on reset, clear out all bindings so that multiple clicks aren't accidentally registered.
-        clearEvents: function() {
+        // on reset, clear out all bindings so that multiple clicks aren't accidentally registered. removes all bindings when game is reset. Otherwise, 
+        // will 'lock' buttons thar are not reset.
+
+        clearEvents: function(arg) {
+            if (arg === 'reset') {
+                this.$resetBtn.unbind();
+            };
             this.$guessBtn.unbind();
             this.$guessInput.unbind();
-            this.$resetBtn.unbind();
             this.$answerBtn.unbind();
         },
         bindEvents: function() {
-            // encountered an issue where bindings were firing on 1,2,4,8,16..
+            // encountered an issue where bindings were firing on 1,2,4,8,16..this seemed due to multiple bindings being created on game reset
             //http://stackoverflow.com/questions/14969960/jquery-click-events-firing-multiple-times
+            // above solution suggested .one to make sure button was only clicked once. found that this was not a full solution with odd behavior occuring
+            // with hint and reset buttons. 
             var self = this;
             this.$guessBtn.click(function() {
                 var currentVal = $('#guess');
-                self.checkInput(currentVal.val());
+                self.checkInput(self.getCurrentGuess());
             });
             this.$guessInput.keypress(function(e) {
                 if (e.keyCode === 13) {
                     var currentVal = $('#guess');
-                    self.checkInput(currentVal.val());
+                    self.checkInput(self.getCurrentGuess());
                 }
             })
             this.$resetBtn.click(function() {
@@ -90,6 +96,12 @@ jQuery(function($) {
                 self.getHint();
             })
         },
+
+        getCurrentGuess: function() {
+            var currentVal = $('#guess');
+            return currentVal.val();
+        },
+
         render: function() {
 
             this.$tryMsg.text(this.currentMsg);
@@ -125,6 +137,7 @@ jQuery(function($) {
             val = Number(val);
             if (this.guesses === this.maxGuess) {
                 this.chgMsg("Maybe it's time you gave up and started a new game.")
+                self.clearEvents();
             } else {
                 if (typeof val == "number" && Math.floor(val) === val) {
                     if (val < 1 || val > 100) {
@@ -133,7 +146,6 @@ jQuery(function($) {
                         if (this.guesses < this.maxGuess) {
                             this.checkGuess(val);
                             this.guesses++;
-                            console.log(this.guesses);
                         }
                     }
                 } else {
@@ -145,21 +157,13 @@ jQuery(function($) {
         checkGuess: function(val) {
             var self = this;
             if (val === this.answer) {
-                this.chgMsg("You found it! " + val)
+                this.chgMsg("You found it! " + val);
+                this.clearEvents;
             } else if (this.prevGuess.hot.indexOf(val) !== -1 || this.prevGuess.cold.indexOf(val) !== -1) {
                 this.chgMsg("Why not guess a new number..")
             } else {
                 this.chgMsg(this.lowerOrHigher(val))
             }
-            // call lowerOrHigher
-            // (val > (this.answer + this.radius) || val < (this.answer - this.radius)) {
-            //     this.prevGuess.cold.push(val)
-            //     this.chgMsg("Brrr....not so close. ")
-            // } else if (val < (this.answer + this.radius) && val > (this.answer - this.radius)) {
-            //     this.prevGuess.hot.push(val)
-            //     this.chgMsg("Getting hotter..")
-            //     this.radius--; // if value is hotter, reduce guess radius 
-            // }
         },
         // check if # is lower or higher.
         lowerOrHigher: function(val) {
@@ -176,34 +180,57 @@ jQuery(function($) {
 
         // call init to reset game. 
         resetGame: function() {
-            this.clearEvents();
+            this.clearEvents('reset');
             this.init();
         },
 
         // set msg to final answer. 
         getHint: function() {
-            var hintArray = [];
+            var self = this;
             var hintText = '';
-            var max = (this.answer + this.currDigitsAway) < 100 ? (this.answer + this.currDigitsAway) : 100;
-            var min = (this.answer - this.currDigitsAway) < 0 ? 0 : this.answer - this.currDigitsAway;
-            if (this.guesses === 1) {
-                for (var i = 0; i < 8; i++) {
-                    hintArray.push(Math.floor(Math.random() * (max - min + 1) + min))
+
+            var hints;
+
+            var hintRange = function() {
+                var currentGuess = Number(self.getCurrentGuess());
+                var min, max;
+                if (currentGuess < self.answer) {
+                    min = currentGuess;
+                    max = currentGuess + self.currDigitsAway;
+                } else if (currentGuess > self.answer) {
+                    max = currentGuess
+                    min = currentGuess - self.currDigitsAway;
                 }
-            } else if (this.guesses === 2) {
-                for (var i = 0; i < 6; i++) {
-                    hintArray.push(Math.floor(Math.random() * (max - min + 1) + min))
-                }
-            } else if (this.guesses === 3) {
-                for (var i = 0; i < 4; i++) {
-                    hintArray.push(Math.floor(Math.random() * (max - min + 1) + min))
-                }
-            } else if (this.guesses === 4) {
-                for (var i = 0; i < 2; i++) {
-                    hintArray.push(Math.floor(Math.random() * (max - min + 1) + min))
-                }
+                return [min, max];
             };
-            this.chgMsg("Hints are: " + hintArray.join(', '));
+
+            var generateRandomHints = function(len) {
+                var hintArray = [];
+                var range = hintRange();
+                while (hintArray.length !== len) {
+                    var rand = Math.floor(Math.random() * (range[1] - range[0] + 1) + range[0]);
+                    if (hintArray.indexOf(rand) === -1 && rand != self.answer) {
+                        hintArray.push(rand);
+                    }
+                }
+                return hintArray;
+            };
+
+            if (this.guesses === 1) {
+                hints = generateRandomHints(7);
+            } else if (this.guesses === 2) {
+                hints = generateRandomHints(5);
+            } else if (this.guesses === 3) {
+                hints = generateRandomHints(2);
+            } else if (this.guesses === 4) {
+                hints = generateRandomHints(1);
+            };
+
+            hints.push(self.answer);
+            hints.sort(function() {
+                return 0.5 - Math.random()
+            }); // https://css-tricks.com/snippets/javascript/shuffle-array/
+            this.chgMsg("Hints are: " + hints.join(', '));
         }
     }
     Main.init();
