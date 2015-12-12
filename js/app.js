@@ -13,27 +13,33 @@
 // DONE - Create a button that provides the answer (Give me a Hint).
 // DONE - Submit the guess by pressing enter or clicking the submit button.
 // DONE (make this look nicer) - After a user guesses a number keep a visual list of Hot and Cold answers that the user can see.
-// Change the background color, add an image, or do something creative when the user guesses the correct answer.
+// DONE Change the background color, add an image, or do something creative when the user guesses the correct answer.
 
 
 // TODO:
 // DONE - create and display array of hints depending on guesses left. 
 // DONE - if winning number found, stop accepting additional input
 // DONE if no more guesses availible, stop accepting additional input
-// display numbers previously guessed - maybe for numbers > x digits away- show in cold panel. as gets closer- show in hot panel
+// DONE - display numbers previously guessed - maybe for numbers > x digits away- show in cold panel. as gets closer- show in hot panel
 // cool winning panel popup? 
 
 jQuery(function($) {
     var Model = {
+        // generate a new random number between 1 - 100.
         newRandom: function() {
             return Math.floor(Math.random() * 100 + 1);
         },
+
+        // store previous guesses. 
         prevGuesses: function() {
             return {
                 hot: [],
                 cold: []
             }
         }
+
+        // Should likely refactor my code to include a Setter/Getter for previous guesses, where currently this functionality 
+        // is baked into my Main object. Need to ask about this. 
     }
     var Main = {
         init: function() {
@@ -108,25 +114,21 @@ jQuery(function($) {
 
 
             if (this.prevGuess.hot.length > 0) {
-                this.$hotWell.css('background-color', 'red').fadeIn(100).fadeOut(100).fadeIn(100).css('background-color', '#f5f5f5');
-                this.$hot.text(this.prevGuess.hot);
+                this.$hotWell.css('background-color', '#F5DADA').fadeIn(100).fadeOut(100).fadeIn(100).css('background-color', '#F5DADA');
+                this.$hot.text(this.prevGuess['hot'].join(', '));
 
             } else {
-                this.$hot.text("Hot");
+                this.$hot.text("<-- Hot -->");
             }
 
             if (this.prevGuess.cold.length > 0) {
-                this.$coldWell.css('background-color', 'blue').fadeIn(100).fadeOut(100).fadeIn(100).css('background-color', '#f5f5f5');
-                this.$cold.text(this.prevGuess.cold);
-
-                //              this.$coldWell.css('background-color', '#f5f5f5')
+                this.$coldWell.css('background-color', '#DADEF5').fadeIn(100).fadeOut(100).fadeIn(100).css('background-color', '#DADEF5');
+                this.$cold.text(this.prevGuess['cold'].join(', '));
             } else {
-                this.$cold.text("Cold");
+                this.$cold.text("<-- Cold -->");
             }
         },
-        // render Try again popup over Hot/Cold button for 2s, leaving hot/cold
-        // lit up
-
+        // change current msg and call render function
         chgMsg: function(msg) {
             this.currentMsg = msg;
             this.render();
@@ -145,7 +147,6 @@ jQuery(function($) {
                     } else {
                         if (this.guesses < this.maxGuess) {
                             this.checkGuess(val);
-                            this.guesses++;
                         }
                     }
                 } else {
@@ -153,19 +154,29 @@ jQuery(function($) {
                 }
             }
         },
-        // check input value for nearness to generated value and push to hot/cold obj arrays.
+        // check input value and make sure number wasn't previously used. also see if the guess is the answer. if none of above, 
+        // pass value to lowerOrHigher function.
         checkGuess: function(val) {
             var self = this;
             if (val === this.answer) {
                 this.chgMsg("You found it! " + val);
-                this.clearEvents;
+                this.winner();
             } else if (this.prevGuess.hot.indexOf(val) !== -1 || this.prevGuess.cold.indexOf(val) !== -1) {
-                this.chgMsg("Why not guess a new number..")
+                this.chgMsg("Why not guess a number you haven't tried..?")
             } else {
+                this.guesses++;
                 this.chgMsg(this.lowerOrHigher(val))
             }
         },
-        // check if # is lower or higher.
+        winner: function() {
+            $('.tryAgain').css("background-color", "#FF0000").fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100);
+            window.setTimeout(resetBackground,2000);
+            function resetBackground() {
+                $('.tryAgain').css("background-color", "#F5F5F5");
+            }
+            this.clearEvents();
+        },
+        // check if # is lower or higher. push value to object holding previous guesses. 
         lowerOrHigher: function(val) {
             var resp = 'Your guess is ';
             this.currDigitsAway = Math.ceil(Math.abs(this.answer - val) / 5) * 5;
@@ -175,6 +186,12 @@ jQuery(function($) {
                 resp += 'greater than the answer and ';
             }
             resp += 'within ' + this.currDigitsAway + ' digits';
+
+            if (this.currDigitsAway <= 25) {
+                this.prevGuess["hot"].push(val);
+            } else {
+                this.prevGuess["cold"].push(val);
+            }
             return resp;
         },
 
@@ -184,13 +201,13 @@ jQuery(function($) {
             this.init();
         },
 
-        // set msg to final answer. 
+        // set msg to array of hints (one idx holds the answer!)
         getHint: function() {
             var self = this;
             var hintText = '';
 
             var hints;
-
+            // create range to generate random numbers within
             var hintRange = function() {
                 var currentGuess = Number(self.getCurrentGuess());
                 var min, max;
@@ -203,7 +220,7 @@ jQuery(function($) {
                 }
                 return [min, max];
             };
-
+            // generate random non-repeating numbers within min/max range. returns an array of hints.
             var generateRandomHints = function(len) {
                 var hintArray = [];
                 var range = hintRange();
@@ -226,13 +243,13 @@ jQuery(function($) {
                 hints = generateRandomHints(1);
             };
 
-            hints.push(self.answer);
+            hints.push(self.answer); // push answer into array of hints
             hints.sort(function() {
                 return 0.5 - Math.random()
             }); // https://css-tricks.com/snippets/javascript/shuffle-array/
             this.chgMsg("Hints are: " + hints.join(', '));
         }
     }
-    Main.init();
+    Main.init(); // get this whole thing moving
 
 });
